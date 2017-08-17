@@ -1,31 +1,47 @@
 package com.example.v_chaodo.android_java;
 
-import android.support.design.widget.TabLayout;
+import android.content.DialogInterface;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.Bundle;
+import android.support.annotation.VisibleForTesting;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
-
+import android.support.design.widget.TabLayout;
+import android.support.test.espresso.idling.CountingIdlingResource;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.os.Bundle;
+import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-
 import android.widget.TextView;
+import android.widget.Toast;
+
 import com.microsoft.azure.mobile.MobileCenter;
 import com.microsoft.azure.mobile.analytics.Analytics;
 import com.microsoft.azure.mobile.crashes.Crashes;
+import com.microsoft.azure.mobile.crashes.CrashesListener;
+import com.microsoft.azure.mobile.crashes.ingestion.models.ErrorAttachmentLog;
+import com.microsoft.azure.mobile.crashes.model.ErrorReport;
+import com.microsoft.azure.mobile.distribute.Distribute;
 import com.microsoft.azure.mobile.push.Push;
+import com.microsoft.azure.mobile.utils.async.MobileCenterConsumer;
+
+import java.io.ByteArrayOutputStream;
+import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
-
+    public static final String LOG_TAG = "MobileCenterSasquatch";
+    @VisibleForTesting
+    static final CountingIdlingResource crashesIdlingResource = new CountingIdlingResource("crashes");
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
      * fragments for each of the sections. We use a
@@ -46,8 +62,109 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         Log.e("installID", "" + MobileCenter.getInstallId().get());
         Push.setListener(new MyPushListener());
+        Distribute.setListener(new MyDistributeListener());
+
+        //Generate Crashes CrashesListener
+        CrashesListener customListener = new CrashesListener() {
+            @Override
+            public boolean shouldProcess(ErrorReport report) {
+                return true;
+            }
+
+            @Override
+            public boolean shouldAwaitUserConfirmation() {
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder
+                        .setTitle(R.string.crash_confirmation_dialog_title)
+                        .setMessage(R.string.crash_confirmation_dialog_message)
+                        .setPositiveButton(R.string.crash_confirmation_dialog_send_button, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                Crashes.notifyUserConfirmation(Crashes.SEND);
+                                Analytics.trackEvent("onClick");
+                            }
+                        })
+                        .setNegativeButton(R.string.crash_confirmation_dialog_not_send_button, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                Crashes.notifyUserConfirmation(Crashes.DONT_SEND);
+                            }
+                        })
+                        .setNeutralButton(R.string.crash_confirmation_dialog_always_send_button, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                Crashes.notifyUserConfirmation(Crashes.ALWAYS_SEND);
+                            }
+                        });
+                builder.create().show();
+                return true;
+            }
+
+            @Override
+            public Iterable<ErrorAttachmentLog> getErrorAttachments(ErrorReport report) {
+                /* Attach some text. */
+                ErrorAttachmentLog textLog = ErrorAttachmentLog.attachmentWithText("This is a text attachment.", "text.txt");
+
+                 /* Attach app icon. */
+                Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
+                byte[] bitMapData = stream.toByteArray();
+                ErrorAttachmentLog binaryLog = ErrorAttachmentLog.attachmentWithBinary(bitMapData, "ic_launcher.jpeg", "image/jpeg");
+
+                /* Return attachments as list. */
+                return Arrays.asList(textLog, binaryLog);
+            }
+
+            @Override
+            public void onBeforeSending(ErrorReport report) {
+                Toast.makeText(MainActivity.this, R.string.crash_before_sending, Toast.LENGTH_SHORT).show();
+                crashesIdlingResource.increment();
+            }
+            @Override
+            public void onSendingFailed(ErrorReport report, Exception e) {
+                Toast.makeText(MainActivity.this, R.string.crash_sent_failed, Toast.LENGTH_SHORT).show();
+                crashesIdlingResource.decrement();
+            }
+
+            @Override
+            public void onSendingSucceeded(ErrorReport report) {
+                String message = String.format("%s\nCrash ID: %s", getString(R.string.crash_sent_succeeded), report.getId());
+                if (report.getThrowable() != null){
+                    message += String.format("\nThrowable: %s", report.getThrowable().toString());
+                }
+                Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
+                crashesIdlingResource.decrement();
+            }
+            // Implement all callbacks here.
+        };
+        Crashes.setListener(customListener);
+            /* Print last crash. */
+        Crashes.hasCrashedInLastSession().thenAccept(new MobileCenterConsumer<Boolean>() {
+
+            @Override
+            public void accept(Boolean crashed) {
+                Log.i(LOG_TAG, "Crashes.hasCrashedInLastSession=" + crashed);
+            }
+        });
+        Crashes.getLastSessionCrashReport().thenAccept(new MobileCenterConsumer<ErrorReport>() {
+
+            @Override
+            public void accept(ErrorReport data) {
+                if (data != null) {
+                    Log.i(LOG_TAG, "Crashes.getLastSessionCrashReport().getThrowable()=", data.getThrowable());
+                }
+            }
+        });
+
+        Crashes.hasCrashedInLastSession();
+        Crashes.getLastSessionCrashReport();
+        // Depending on the user's choice, call Crashes.notifyUserConfirmation() with the right value.
+        Crashes.notifyUserConfirmation(Crashes.DONT_SEND);
+        Crashes.notifyUserConfirmation(Crashes.SEND);
+        Crashes.notifyUserConfirmation(Crashes.ALWAYS_SEND);
         MobileCenter.start(getApplication(), "d5c64a90-ce0b-4700-a239-49006927c16e",
-                Analytics.class, Crashes.class, Push.class);
+                Analytics.class, Crashes.class, Push.class, Distribute.class);
         Analytics.trackEvent("Click_Section1");
         Analytics.trackEvent("Click_Section2");
         Analytics.trackEvent("Click_Section3");
@@ -74,7 +191,6 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
-
     }
 
 
