@@ -163,7 +163,7 @@ public class MainActivity extends AppCompatActivity {
         Crashes.notifyUserConfirmation(Crashes.DONT_SEND);
         Crashes.notifyUserConfirmation(Crashes.SEND);
         Crashes.notifyUserConfirmation(Crashes.ALWAYS_SEND);
-        MobileCenter.start(getApplication(), "d5c64a90-ce0b-4700-a239-49006927c16e",
+        MobileCenter.start(getApplication(), "961d0089-2e9e-46c0-8a54-639c0807d619",
                 Analytics.class, Crashes.class, Push.class, Distribute.class);
         Analytics.trackEvent("Click_Section1");
         Analytics.trackEvent("Click_Section2");
