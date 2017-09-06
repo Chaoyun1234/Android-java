@@ -55,7 +55,8 @@ public class MyDistributeListener implements DistributeListener {
         }
         dialogBuilder.setCancelable(false); // if it's cancelable you should map cancel to postpone, but only for optional updates
         dialogBuilder.create().show();
-
+        Distribute.notifyUpdateAction(UpdateAction.UPDATE);
+        Distribute.notifyUpdateAction(UpdateAction.POSTPONE);
         // Return true if you are using your own dialog, false otherwise
         return true;
     }
