@@ -163,7 +163,8 @@ public class MainActivity extends AppCompatActivity {
         Crashes.notifyUserConfirmation(Crashes.DONT_SEND);
         Crashes.notifyUserConfirmation(Crashes.SEND);
         Crashes.notifyUserConfirmation(Crashes.ALWAYS_SEND);
-        MobileCenter.start(getApplication(), "961d0089-2e9e-46c0-8a54-639c0807d619",
+        MobileCenter.setLogUrl("https://in-staging-south-centralus.staging.avalanch.es");
+        MobileCenter.start(getApplication(), "d69df3f9-56ba-4312-af7e-5da7e2e257c6",
                 Analytics.class, Crashes.class, Push.class, Distribute.class);
         Analytics.trackEvent("Click_Section1");
         Analytics.trackEvent("Click_Section2");
