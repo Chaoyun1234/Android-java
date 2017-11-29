@@ -5,10 +5,10 @@ package com.example.v_chaodo.android_java;
     import android.content.DialogInterface;
     import android.net.Uri;
 
-    import com.microsoft.azure.mobile.distribute.Distribute;
-    import com.microsoft.azure.mobile.distribute.DistributeListener;
-    import com.microsoft.azure.mobile.distribute.ReleaseDetails;
-    import com.microsoft.azure.mobile.distribute.UpdateAction;
+    import com.microsoft.appcenter.distribute.Distribute;
+    import com.microsoft.appcenter.distribute.DistributeListener;
+    import com.microsoft.appcenter.distribute.ReleaseDetails;
+    import com.microsoft.appcenter.distribute.UpdateAction;
 
 /**
  * Created by v-chaodo on 8/16/2017.
@@ -31,7 +31,7 @@ public class MyDistributeListener implements DistributeListener {
         dialogBuilder.setMessage(releaseNotes);
 
         // Mimic default SDK buttons
-        dialogBuilder.setPositiveButton(com.microsoft.azure.mobile.distribute.R.string.mobile_center_distribute_update_dialog_download, new DialogInterface.OnClickListener() {
+        dialogBuilder.setPositiveButton(com.microsoft.appcenter.distribute.R.string.appcenter_distribute_update_dialog_download, new DialogInterface.OnClickListener() {
 
             @Override
             public void onClick(DialogInterface dialog, int which) {
@@ -43,7 +43,7 @@ public class MyDistributeListener implements DistributeListener {
 
         // We can postpone the release only if the update is not mandatory
         if (!releaseDetails.isMandatoryUpdate()) {
-            dialogBuilder.setNegativeButton(com.microsoft.azure.mobile.distribute.R.string.mobile_center_distribute_update_dialog_postpone, new DialogInterface.OnClickListener() {
+            dialogBuilder.setNegativeButton(com.microsoft.appcenter.distribute.R.string.appcenter_distribute_update_dialog_postpone, new DialogInterface.OnClickListener() {
 
                 @Override
                 public void onClick(DialogInterface dialog, int which) {

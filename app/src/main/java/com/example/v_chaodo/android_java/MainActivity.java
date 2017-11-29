@@ -25,21 +25,21 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.microsoft.azure.mobile.MobileCenter;
-import com.microsoft.azure.mobile.analytics.Analytics;
-import com.microsoft.azure.mobile.crashes.Crashes;
-import com.microsoft.azure.mobile.crashes.CrashesListener;
-import com.microsoft.azure.mobile.crashes.ingestion.models.ErrorAttachmentLog;
-import com.microsoft.azure.mobile.crashes.model.ErrorReport;
-import com.microsoft.azure.mobile.distribute.Distribute;
-import com.microsoft.azure.mobile.push.Push;
-import com.microsoft.azure.mobile.utils.async.MobileCenterConsumer;
+import com.microsoft.appcenter.AppCenter;
+import com.microsoft.appcenter.analytics.Analytics;
+import com.microsoft.appcenter.crashes.Crashes;
+import com.microsoft.appcenter.crashes.CrashesListener;
+import com.microsoft.appcenter.crashes.ingestion.models.ErrorAttachmentLog;
+import com.microsoft.appcenter.crashes.model.ErrorReport;
+import com.microsoft.appcenter.distribute.Distribute;
+import com.microsoft.appcenter.push.Push;
+import com.microsoft.appcenter.utils.async.AppCenterConsumer;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
-    public static final String LOG_TAG = "MobileCenterSasquatch";
+    public static final String LOG_TAG = "AppCenterSasquatch";
     @VisibleForTesting
     static final CountingIdlingResource crashesIdlingResource = new CountingIdlingResource("crashes");
     /**
@@ -60,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.e("installID", "" + MobileCenter.getInstallId().get());
+        Log.e("installID", "" + AppCenter.getInstallId().get());
         Push.setListener(new MyPushListener());
         Distribute.setListener(new MyDistributeListener());
 
@@ -140,14 +140,14 @@ public class MainActivity extends AppCompatActivity {
         };
         Crashes.setListener(customListener);
             /* Print last crash. */
-        Crashes.hasCrashedInLastSession().thenAccept(new MobileCenterConsumer<Boolean>() {
+        Crashes.hasCrashedInLastSession().thenAccept(new AppCenterConsumer<Boolean>() {
 
             @Override
             public void accept(Boolean crashed) {
                 Log.i(LOG_TAG, "Crashes.hasCrashedInLastSession=" + crashed);
             }
         });
-        Crashes.getLastSessionCrashReport().thenAccept(new MobileCenterConsumer<ErrorReport>() {
+        Crashes.getLastSessionCrashReport().thenAccept(new AppCenterConsumer<ErrorReport>() {
 
             @Override
             public void accept(ErrorReport data) {
@@ -163,8 +163,8 @@ public class MainActivity extends AppCompatActivity {
         Crashes.notifyUserConfirmation(Crashes.DONT_SEND);
         Crashes.notifyUserConfirmation(Crashes.SEND);
         Crashes.notifyUserConfirmation(Crashes.ALWAYS_SEND);
-        //MobileCenter.setLogUrl("https://in-staging-south-centralus.staging.avalanch.es");
-        MobileCenter.start(getApplication(), "ba0ad467-b8ae-46a1-ad99-551e083a436c",
+        AppCenter.setLogUrl("https://in-staging-south-centralus.staging.avalanch.es");
+        AppCenter.start(getApplication(), "2167e500-c5db-4046-8b58-0ae136b717e5",
                 Analytics.class, Crashes.class, Push.class, Distribute.class);
         Analytics.trackEvent("Click_Section1");
         Analytics.trackEvent("Click_Section2");

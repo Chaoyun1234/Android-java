@@ -4,8 +4,8 @@ import android.app.Activity;
 import android.support.v7.app.AlertDialog;
 import android.widget.Toast;
 
-import com.microsoft.azure.mobile.push.PushListener;
-import com.microsoft.azure.mobile.push.PushNotification;
+import com.microsoft.appcenter.push.PushListener;
+import com.microsoft.appcenter.push.PushNotification;
 
 import java.util.Map;
 
